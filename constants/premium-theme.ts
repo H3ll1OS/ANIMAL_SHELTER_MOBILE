@@ -1,0 +1,18 @@
+export const palette = {
+  ink: '#1f2937',
+  body: '#64748b',
+  sand: '#f8fafc',
+  paper: '#ffffff',
+  clay: '#ff6b35',
+  clayDeep: '#c94a22',
+  gold: '#fb923c',
+  rose: '#f97316',
+  eucalyptus: '#16a34a',
+  sky: '#2563eb',
+  line: '#e5e7eb',
+  lineStrong: '#cbd5e1',
+  success: '#16a34a',
+  danger: '#dc2626',
+  warning: '#d97706',
+  shadow: 'rgba(15, 23, 42, 0.1)',
+};

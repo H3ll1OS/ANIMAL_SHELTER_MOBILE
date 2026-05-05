@@ -1,0 +1,14 @@
+export type RoleView = 'public' | 'admin' | 'developer';
+export type SpeciesFilter = 'all' | 'Dog' | 'Cat';
+export type PublicSection = 'home' | 'pets' | 'pet-details' | 'pet-application' | 'donations' | 'account';
+export type AdminSection = 'dashboard' | 'pets' | 'adoptions' | 'donations' | 'donation-details' | 'health' | 'health-record';
+export type DeveloperSection = 'users';
+export type DonationStep = 'account' | 'send';
+export type AuthMode = 'login' | 'register' | 'forgot-password';
+export type AdminAdoptionFilter = 'all' | 'pending' | 'approved' | 'rejected';
+export type AdminDonationFilter = 'all' | 'completed' | 'pending' | 'failed';
+export type AdminHealthFilter = 'all' | 'active-alerts' | 'check-ups-due' | 'recovered';
+export type AdminHealthStatus = 'Active Alert' | 'Check-up Due' | 'Recovered';
+export type RedirectPrompt = { userId: string; role: 'admin' | 'developer' } | null;
+export type UploadedDocument = { name: string; uri: string; mimeType?: string | null; size?: number | null };
+export type PetApplicationFieldKey = 'fullName' | 'email' | 'phone' | 'address' | 'household' | 'message' | 'documents';
