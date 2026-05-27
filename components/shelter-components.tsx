@@ -208,21 +208,22 @@ export function AdminMoreMenuItem({
   );
 }
 
-export function PaymentMethodLogo({ method, active, large }: { method: PaymentMethod; active?: boolean; large?: boolean }) {
+export function PaymentMethodLogo({ method, active, large, compact }: { method: PaymentMethod; active?: boolean; large?: boolean; compact?: boolean }) {
   const visual = paymentMethodVisuals[method];
   const iconColor = active ? '#ffffff' : visual.accentDeep;
   const shellStyle = [
     styles.clientDonateMethodLogoShell,
+    compact && styles.clientDonateMethodLogoShellCompact,
     large && styles.clientDonateMethodLogoShellLarge,
     { backgroundColor: active ? visual.accent : '#ffffff', borderColor: active ? visual.accent : visual.border },
   ];
 
   if (method === 'gcash') {
     return (
-      <View style={[styles.clientDonateMethodLogoShell, large && styles.clientDonateMethodLogoShellLarge, styles.clientDonateMethodLogoShellAsset, active && styles.clientDonateMethodLogoShellAssetActive]}>
+      <View style={[styles.clientDonateMethodLogoShell, compact && styles.clientDonateMethodLogoShellCompact, large && styles.clientDonateMethodLogoShellLarge, styles.clientDonateMethodLogoShellAsset, active && styles.clientDonateMethodLogoShellAssetActive]}>
         <ExpoImage
           source={require('../assets/images/gcash-icon.svg')}
-          style={[styles.clientDonateMethodLogoAssetImage, large && styles.clientDonateMethodLogoAssetImageLarge]}
+          style={[styles.clientDonateMethodLogoAssetImage, compact && styles.clientDonateMethodLogoAssetImageCompact, large && styles.clientDonateMethodLogoAssetImageLarge]}
           contentFit="contain"
         />
       </View>
@@ -232,7 +233,7 @@ export function PaymentMethodLogo({ method, active, large }: { method: PaymentMe
   if (method === 'paypal') {
     return (
       <View style={shellStyle}>
-        <FontAwesome5 name="paypal" size={large ? 21 : 18} color={iconColor} brand />
+        <FontAwesome5 name="paypal" size={large ? 21 : compact ? 13 : 18} color={iconColor} brand />
       </View>
     );
   }
@@ -240,14 +241,14 @@ export function PaymentMethodLogo({ method, active, large }: { method: PaymentMe
   if (method === 'bank_transfer') {
     return (
       <View style={shellStyle}>
-        <FontAwesome5 name="university" size={large ? 19 : 17} color={iconColor} solid />
+        <FontAwesome5 name="university" size={large ? 19 : compact ? 12 : 17} color={iconColor} solid />
       </View>
     );
   }
 
   return (
     <View style={shellStyle}>
-      <FontAwesome5 name="credit-card" size={large ? 19 : 16} color={iconColor} solid />
+      <FontAwesome5 name="credit-card" size={large ? 19 : compact ? 12 : 16} color={iconColor} solid />
     </View>
   );
 }

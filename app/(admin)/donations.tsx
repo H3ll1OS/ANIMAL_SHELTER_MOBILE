@@ -1,6 +1,6 @@
 import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { palette } from '@/constants/premium-theme';
 import { Card } from '@/components';
 import { formatAdminCurrency, formatAdminDate, getAdminDonationStatus, getAdminDonationStatusTone, getInitials, paymentMethodVisuals } from '@/utils/shelter-utils';
@@ -32,7 +32,7 @@ export function AdminDonationsPage() {
               <Card title="Donations" subtitle="Manage all donations and contributions.">
                 <View style={[styles.adminDonationLayout, isTablet && styles.adminDonationLayoutSplit]}>
                   <View style={[styles.adminDonationQueue, isTablet && styles.adminDonationQueueSplit]}>
-                    <View style={styles.adminDonationMetricGrid}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.adminDonationMetricGrid}>
                       {adminDonationMetrics.map((metric) => (
                         <View key={metric.key} style={[styles.adminDonationMetricCard, isTablet && styles.adminDonationMetricCardSplit]}>
                           <View style={[styles.adminDonationMetricIcon, { backgroundColor: metric.tint }]}>
@@ -43,7 +43,7 @@ export function AdminDonationsPage() {
                           <Text style={styles.adminDonationMetricNote}>{metric.note}</Text>
                         </View>
                       ))}
-                    </View>
+                    </ScrollView>
 
                     <View style={styles.adminDonationSearchRow}>
                       <View style={styles.adminDonationSearchShell}>

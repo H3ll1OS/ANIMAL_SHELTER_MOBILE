@@ -1,6 +1,6 @@
 import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather } from '@expo/vector-icons';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { palette } from '@/constants/premium-theme';
 import { Card, DangerButton, Field, PrimaryButton, SecondaryButton, Toggle } from '@/components';
 import { formatAdminDate, getAdminHealthStatusTone, getInitials, makeEuthanasiaForm, makeHealthForm, makeVaccineForm } from '@/utils/shelter-utils';
@@ -42,7 +42,7 @@ export function AdminHealthPage() {
             {activeAdminSection === 'health' ? (
               <Card title="Health Monitoring" subtitle="Treatments, recoveries, and due check-ups in one queue.">
                 <View style={styles.adminHealthLayout}>
-                  <View style={styles.adminHealthMetricGrid}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.adminHealthMetricGrid}>
                     {adminHealthMetrics.map((metric) => (
                       <View key={metric.key} style={[styles.adminHealthMetricCard, isTablet && styles.adminHealthMetricCardSplit]}>
                         <View style={[styles.adminHealthMetricIcon, { backgroundColor: metric.tint }]}>
@@ -53,7 +53,7 @@ export function AdminHealthPage() {
                         <Text style={styles.adminHealthMetricNote}>{metric.note}</Text>
                       </View>
                     ))}
-                  </View>
+                  </ScrollView>
 
                   <View style={styles.adminHealthSearchRow}>
                     <View style={styles.adminHealthSearchShell}>

@@ -92,7 +92,7 @@ export function ShelterMobileApp({
   const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [showPasswordEditor, setShowPasswordEditor] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '', address: '', dateOfBirth: '' });
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: 'password123', nextPassword: 'newpass123' });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', nextPassword: '' });
   const [petForm, setPetForm] = useState(makePetForm());
   const [petEditId, setPetEditId] = useState<string | null>(null);
   const [healthForm, setHealthForm] = useState(makeHealthForm());

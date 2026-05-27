@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 
@@ -189,6 +189,7 @@ type ApiEuthanasiaLog = {
 const API_PATH = '/Animal_Shelter/public/api/mobile';
 const API_BASE_URL = resolveApiBaseUrl();
 const AUTH_TOKEN_KEY = 'animal_shelter_api_token';
+const LIVE_SYNC_INTERVAL_MS = 5000;
 const ShelterContext = createContext<ShelterStore | null>(null);
 
 export function ShelterProvider({ children }: { children: React.ReactNode }) {
@@ -203,6 +204,8 @@ export function ShelterProvider({ children }: { children: React.ReactNode }) {
   const [vaccineSchedules, setVaccineSchedules] = useState<VaccineSchedule[]>([]);
   const [euthanasiaLogs, setEuthanasiaLogs] = useState<EuthanasiaLog[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
+  const refreshInFlightRef = useRef(false);
+  const liveSyncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hydrate = useCallback((payload: BootstrapPayload) => {
     const mappedUser = payload.user ? mapUser(payload.user) : null;
@@ -217,8 +220,16 @@ export function ShelterProvider({ children }: { children: React.ReactNode }) {
     setEuthanasiaLogs(payload.euthanasia_logs.map(mapEuthanasiaLog));
   }, []);
 
-  const refreshBootstrap = useCallback(async (authToken?: string | null) => {
+  const refreshBootstrap = useCallback(async (authToken?: string | null, options?: { silent?: boolean }) => {
     const activeToken = authToken !== undefined ? authToken : tokenRef.current;
+    const silent = options?.silent ?? false;
+
+    if (silent && refreshInFlightRef.current) {
+      return;
+    }
+
+    refreshInFlightRef.current = true;
+
     try {
       const payload = await api<BootstrapPayload>('/bootstrap', {
         method: 'GET',
@@ -230,9 +241,15 @@ export function ShelterProvider({ children }: { children: React.ReactNode }) {
         setToken(null);
       }
       hydrate(payload);
-      setNotice(null);
+      if (!silent) {
+        setNotice(null);
+      }
     } catch (error) {
-      setNotice(getApiErrorMessage(error));
+      if (!silent) {
+        setNotice(getApiErrorMessage(error));
+      }
+    } finally {
+      refreshInFlightRef.current = false;
     }
   }, [hydrate]);
 
@@ -267,6 +284,41 @@ export function ShelterProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+    };
+  }, [refreshBootstrap]);
+
+  useEffect(() => {
+    const runLiveSync = () => {
+      void refreshBootstrap(undefined, { silent: true });
+    };
+    const startLiveSync = () => {
+      if (liveSyncTimerRef.current) {
+        return;
+      }
+      liveSyncTimerRef.current = setInterval(runLiveSync, LIVE_SYNC_INTERVAL_MS);
+    };
+    const stopLiveSync = () => {
+      if (!liveSyncTimerRef.current) {
+        return;
+      }
+      clearInterval(liveSyncTimerRef.current);
+      liveSyncTimerRef.current = null;
+    };
+
+    startLiveSync();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        runLiveSync();
+        startLiveSync();
+      } else {
+        stopLiveSync();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      stopLiveSync();
     };
   }, [refreshBootstrap]);
 
