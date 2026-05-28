@@ -1,7 +1,7 @@
 import { ShelterMobileApp } from '@/components/AppShell';
 import { Pressable, Text, View } from 'react-native';
 import type { SpeciesFilter } from '@/types/navigation';
-import { ClientPetBrowseCard, PrimaryButton, StatusBadge } from '@/components';
+import { ClientPetBrowseCard, PrimaryButton, StatusBadge, pressableFeedback } from '@/components';
 import { getPetVaccinationStatus } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
@@ -31,7 +31,7 @@ export function ClientPetsPage() {
                     {(['all', 'Dog', 'Cat'] as SpeciesFilter[]).map((filter) => (
                       <Pressable
                         key={filter}
-                        style={[styles.clientAdoptFilterChip, speciesFilter === filter && styles.clientAdoptFilterChipActive]}
+                        style={pressableFeedback([styles.clientAdoptFilterChip, speciesFilter === filter && styles.clientAdoptFilterChipActive])}
                         onPress={() => setSpeciesFilter(filter)}>
                         <Text style={[styles.clientAdoptFilterChipText, speciesFilter === filter && styles.clientAdoptFilterChipTextActive]}>{filter}</Text>
                       </Pressable>
@@ -46,7 +46,7 @@ export function ClientPetsPage() {
                       <Text style={styles.clientAdoptResultsTitle}>{adoptFilteredPets.length} curated matches</Text>
                       <Text style={styles.clientAdoptResultsText}>Each profile opens a full pet details page with care notes, shelter contact information, and next steps.</Text>
                     </View>
-                    <Pressable style={styles.clientAdoptResultsAction} onPress={() => setActivePublicSection('account')}>
+                    <Pressable style={pressableFeedback(styles.clientAdoptResultsAction)} onPress={() => setActivePublicSection('account')}>
                       <Text style={styles.clientAdoptResultsActionText}>Your requests</Text>
                     </Pressable>
                   </View>

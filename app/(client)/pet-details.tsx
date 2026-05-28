@@ -1,8 +1,9 @@
 import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { palette } from '@/constants/premium-theme';
-import { Card, DetailRow, PrimaryButton } from '@/components';
+import { Card, DetailRow, PrimaryButton, pressableFeedback } from '@/components';
 import { getPetAvailabilityCopy, getPetHealthStatus, getPetVaccinationStatus } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
@@ -28,20 +29,26 @@ export function ClientPetDetailsPage() {
                 <View style={styles.petDetailsScreen}>
                   <View style={styles.petDetailsHero}>
                     <View style={styles.petDetailsHeroTop}>
-                      <Pressable style={styles.petDetailsIconButton} onPress={() => setActivePublicSection(petDetailsReturnSection)}>
+                      <Pressable style={pressableFeedback(styles.petDetailsIconButton)} onPress={() => setActivePublicSection(petDetailsReturnSection)}>
                         <Feather name="arrow-left" size={18} color={palette.ink} />
                       </Pressable>
                       <View style={styles.petDetailsHeroActions}>
-                        <Pressable style={styles.petDetailsIconButton} onPress={() => toggleFavoritePet(selectedPet.id)}>
+                        <Pressable style={pressableFeedback(styles.petDetailsIconButton)} onPress={() => toggleFavoritePet(selectedPet.id)}>
                           <FontAwesome5 name="heart" size={16} color={favoritePetIds.includes(selectedPet.id) ? palette.clay : palette.body} solid={favoritePetIds.includes(selectedPet.id)} />
                         </Pressable>
                       </View>
                     </View>
                     <View style={styles.petDetailsHeroMedia}>
-                      <View style={styles.petDetailsHeroGlow} />
-                      <View style={styles.petDetailsHeroIconWrap}>
-                        <FontAwesome5 name={selectedPet.species === 'Dog' ? 'dog' : selectedPet.species === 'Cat' ? 'cat' : 'paw'} size={58} color="#ffffff" />
-                      </View>
+                      {selectedPet.imageUrl ? (
+                        <ExpoImage source={{ uri: selectedPet.imageUrl }} style={styles.petDetailsHeroImage} contentFit="cover" />
+                      ) : (
+                        <>
+                          <View style={styles.petDetailsHeroGlow} />
+                          <View style={styles.petDetailsHeroIconWrap}>
+                            <FontAwesome5 name={selectedPet.species === 'Dog' ? 'dog' : selectedPet.species === 'Cat' ? 'cat' : 'paw'} size={58} color="#ffffff" />
+                          </View>
+                        </>
+                      )}
                     </View>
                     <View style={styles.petDetailsHeroCopy}>
                       <Text style={styles.petDetailsHeroName}>{selectedPet.name}</Text>

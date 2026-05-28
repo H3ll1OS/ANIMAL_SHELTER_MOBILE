@@ -18,7 +18,8 @@ import type {
 
 type LoginPayload = { email: string; password: string };
 type RegisterPayload = { name: string; email: string; password: string };
-type ProfilePayload = { name: string; email: string; phone?: string; address?: string; dateOfBirth?: string };
+type ProfileImageUpload = { uri: string; name?: string | null; mimeType?: string | null };
+type ProfilePayload = { name: string; email: string; phone?: string; address?: string; dateOfBirth?: string; profileImage?: ProfileImageUpload | null };
 type AdoptionPayload = {
   petId: string;
   fullName: string;
@@ -104,6 +105,8 @@ type ApiUser = {
   date_of_birth?: string | null;
   address?: string | null;
   profile_image?: string | null;
+  profile_image_url?: string | null;
+  profile_image_updated_at?: number | null;
 };
 
 type ApiPet = {
@@ -115,7 +118,10 @@ type ApiPet = {
   gender: Pet['gender'];
   description: string | null;
   image_label?: string | null;
+  image_path?: string | null;
   status: string;
+  image_url?: string | null;
+  image_updated_at?: number | null;
   date_received: string | null;
   size: string;
 };
@@ -123,6 +129,7 @@ type ApiPet = {
 type ApiAdoption = {
   id: number;
   pet_id: number;
+  pet_name?: string | null;
   user_id: number;
   full_name: string;
   email: string;
@@ -387,19 +394,47 @@ export function ShelterProvider({ children }: { children: React.ReactNode }) {
         }
       },
       updateProfile: async (payload) => {
-        await api('/account', {
-          method: 'PUT',
-          token,
-          body: {
-            name: payload.name,
-            email: payload.email,
-            phone: payload.phone,
-            address: payload.address,
-            date_of_birth: payload.dateOfBirth,
-          },
-        });
-        await refreshBootstrap();
-        setNotice('Profile updated successfully.');
+        try {
+          if (payload.profileImage?.uri) {
+            const body = new FormData();
+            body.append('_method', 'PUT');
+            body.append('name', payload.name);
+            body.append('email', payload.email);
+            body.append('phone', payload.phone ?? '');
+            body.append('address', payload.address ?? '');
+            body.append('date_of_birth', payload.dateOfBirth ?? '');
+            body.append('profile_image', {
+              uri: payload.profileImage.uri,
+              name: payload.profileImage.name || 'profile-photo.jpg',
+              type: payload.profileImage.mimeType || 'image/jpeg',
+            } as any);
+
+            await api('/account', {
+              method: 'POST',
+              token,
+              body,
+            });
+            await refreshBootstrap();
+            setNotice('Profile updated successfully.');
+            return;
+          }
+
+          await api('/account', {
+            method: 'PUT',
+            token,
+            body: {
+              name: payload.name,
+              email: payload.email,
+              phone: payload.phone,
+              address: payload.address,
+              date_of_birth: payload.dateOfBirth,
+            },
+          });
+          await refreshBootstrap();
+          setNotice('Profile updated successfully.');
+        } catch (error) {
+          handleActionError(error);
+        }
       },
       changePassword: async (currentPassword, nextPassword) => {
         const result = await api<{ message: string }>('/account/password', {
@@ -625,16 +660,17 @@ async function api<T = unknown>(
   options: { method: string; token?: string | null; body?: unknown }
 ): Promise<T> {
   let response: Response;
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method,
       headers: {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       },
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: options.body ? (isFormData ? options.body as BodyInit : JSON.stringify(options.body)) : undefined,
     });
   } catch (error) {
     throw new Error(getApiErrorMessage(error));
@@ -676,7 +712,7 @@ function mapUser(user: ApiUser): ShelterUser {
     phone: user.phone ?? undefined,
     dateOfBirth: user.date_of_birth ?? undefined,
     address: user.address ?? undefined,
-    profileImage: user.profile_image ?? undefined,
+    profileImage: makeStorageUrl(user.profile_image, user.profile_image_updated_at) ?? user.profile_image_url ?? undefined,
   };
 }
 
@@ -690,6 +726,7 @@ function mapPet(pet: ApiPet): Pet {
     gender: pet.gender,
     description: pet.description ?? '',
     imageLabel: pet.image_label ?? pet.name,
+    imageUrl: makeStorageUrl(pet.image_path, pet.image_updated_at) ?? pet.image_url ?? undefined,
     status: pet.status as Pet['status'],
     dateReceived: pet.date_received ?? '',
     size: normalizeSize(pet.size),
@@ -700,6 +737,7 @@ function mapAdoption(adoption: ApiAdoption): Adoption {
   return {
     id: String(adoption.id),
     petId: String(adoption.pet_id),
+    petName: adoption.pet_name ?? undefined,
     userId: String(adoption.user_id),
     fullName: adoption.full_name,
     email: adoption.email,
@@ -818,6 +856,22 @@ function extractHostname(value?: string | null) {
   const trimmed = value.replace(/^[a-z]+:\/\//i, '').split('/')[0];
   const hostname = trimmed.split(':')[0];
   return hostname || null;
+}
+
+function makeStorageUrl(path?: string | null, version?: number | null) {
+  if (!path) {
+    return null;
+  }
+
+  if (/^(https?:|data:|file:|blob:)/i.test(path)) {
+    return path;
+  }
+
+  const publicBaseUrl = API_BASE_URL.replace(/\/api\/mobile\/?$/i, '');
+  const cleanPath = path.replace(/^\/+/, '');
+  const suffix = version ? `?v=${version}` : '';
+
+  return `${publicBaseUrl}/storage/${cleanPath}${suffix}`;
 }
 
 function getApiErrorMessage(error: unknown) {

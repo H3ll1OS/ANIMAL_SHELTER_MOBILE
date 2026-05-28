@@ -1,8 +1,10 @@
 import { ShelterMobileApp } from '@/components/AppShell';
-import { Pressable, Text, View } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { Image as ExpoImage } from 'expo-image';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Field, PrimaryButton, SettingsRow, StatusBadge } from '@/components';
+import { Field, PrimaryButton, SettingsRow, StatusBadge, pressableFeedback } from '@/components';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
 
@@ -12,6 +14,7 @@ export function ClientAccountPage() {
   const [activeSettingsPanel, setActiveSettingsPanel] = useState<'language' | 'theme' | 'support' | 'terms' | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordFeedback, setPasswordFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+  const [isProfileSuccessModalVisible, setIsProfileSuccessModalVisible] = useState(false);
   const {
     store,
     setActiveRoleView,
@@ -40,6 +43,7 @@ export function ClientAccountPage() {
   const hasValidNextPassword = passwordForm.nextPassword.trim().length >= 8;
   const passwordsMatch = passwordForm.nextPassword === confirmPassword;
   const canUpdatePassword = hasCurrentPassword && hasValidNextPassword && passwordsMatch;
+  const profileImageUri = profileForm.profileImage?.uri ?? currentUser?.profileImage;
 
   const openPasswordEditor = () => {
     setActiveSettingsPanel(null);
@@ -70,6 +74,35 @@ export function ClientAccountPage() {
     }
   };
 
+  const pickProfileImage = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'image/*',
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setProfileForm((current) => ({
+      ...current,
+      profileImage: {
+        uri: asset.uri,
+        name: asset.name,
+        mimeType: asset.mimeType,
+      },
+    }));
+  };
+
+  const handleProfileSave = async () => {
+    await store.updateProfile(profileForm);
+    store.dismissNotice();
+    setShowProfileEditor(false);
+    setIsProfileSuccessModalVisible(true);
+  };
+
   return (
     <>
             {activePublicSection === 'account' ? (
@@ -90,14 +123,18 @@ export function ClientAccountPage() {
                       </View>
                       <View style={styles.clientSettingsProfileRow}>
                         <View style={styles.clientSettingsAvatar}>
-                          <Text style={styles.clientSettingsAvatarText}>{accountInitials}</Text>
+                          {profileImageUri ? (
+                            <ExpoImage source={{ uri: profileImageUri }} style={styles.clientSettingsAvatarImage} contentFit="cover" />
+                          ) : (
+                            <Text style={styles.clientSettingsAvatarText}>{accountInitials}</Text>
+                          )}
                         </View>
                         <View style={styles.clientSettingsProfileCopy}>
                           <Text style={styles.clientSettingsProfileName}>{currentUser.name}</Text>
                           <Text style={styles.clientSettingsProfileEmail}>{currentUser.email}</Text>
                         </View>
                       </View>
-                      <Pressable style={styles.clientSettingsEditButton} onPress={() => setShowProfileEditor((current) => !current)}>
+                      <Pressable style={pressableFeedback(styles.clientSettingsEditButton)} onPress={() => setShowProfileEditor((current) => !current)}>
                         <Text style={styles.clientSettingsEditButtonText}>{showProfileEditor ? 'Close profile' : 'Edit profile'}</Text>
                       </Pressable>
                     </View>
@@ -105,6 +142,23 @@ export function ClientAccountPage() {
                     {showProfileEditor ? (
                       <View style={styles.clientSettingsPanel}>
                         <Text style={styles.clientSettingsPanelTitle}>Edit Profile</Text>
+                        <View style={styles.clientProfilePhotoEditor}>
+                          <View style={styles.clientProfilePhotoPreview}>
+                            {profileImageUri ? (
+                              <ExpoImage source={{ uri: profileImageUri }} style={styles.clientProfilePhotoPreviewImage} contentFit="cover" />
+                            ) : (
+                              <Text style={styles.clientProfilePhotoPreviewText}>{accountInitials}</Text>
+                            )}
+                          </View>
+                          <View style={styles.clientProfilePhotoEditorCopy}>
+                            <Text style={styles.clientProfilePhotoEditorTitle}>Profile Photo</Text>
+                            <Text style={styles.clientProfilePhotoEditorText}>{profileForm.profileImage ? profileForm.profileImage.name || 'New image selected' : 'JPG, PNG, or WebP image'}</Text>
+                          </View>
+                          <Pressable style={pressableFeedback(styles.clientProfilePhotoButton)} onPress={pickProfileImage}>
+                            <Feather name="upload" size={15} color="#ffffff" />
+                            <Text style={styles.clientProfilePhotoButtonText}>Upload</Text>
+                          </Pressable>
+                        </View>
                         <View style={[styles.clientFormGrid, isTablet && styles.clientFormGridWide]}>
                           <View style={[styles.clientFormGridItem, clientSplitFieldStyle]}>
                             <Field label="Name" value={profileForm.name} onChangeText={(value) => setProfileForm((current) => ({ ...current, name: value }))} />
@@ -122,7 +176,7 @@ export function ClientAccountPage() {
                             <Field label="Address" value={profileForm.address} multiline onChangeText={(value) => setProfileForm((current) => ({ ...current, address: value }))} />
                           </View>
                         </View>
-                        <PrimaryButton label="Save Profile" onPress={() => store.updateProfile(profileForm)} />
+                        <PrimaryButton label="Save Profile" onPress={handleProfileSave} />
                       </View>
                     ) : null}
 
@@ -142,7 +196,7 @@ export function ClientAccountPage() {
                           {['English', 'Filipino'].map((option) => {
                             const isActive = language === option;
                             return (
-                              <Pressable key={option} style={[styles.clientSettingsChoice, isActive && styles.clientSettingsChoiceActive]} onPress={() => setLanguage(option)}>
+                              <Pressable key={option} style={pressableFeedback([styles.clientSettingsChoice, isActive && styles.clientSettingsChoiceActive])} onPress={() => setLanguage(option)}>
                                 <Text style={[styles.clientSettingsChoiceText, isActive && styles.clientSettingsChoiceTextActive]}>{option}</Text>
                               </Pressable>
                             );
@@ -158,7 +212,7 @@ export function ClientAccountPage() {
                           {['Light', 'System'].map((option) => {
                             const isActive = themePreference === option;
                             return (
-                              <Pressable key={option} style={[styles.clientSettingsChoice, isActive && styles.clientSettingsChoiceActive]} onPress={() => setThemePreference(option)}>
+                              <Pressable key={option} style={pressableFeedback([styles.clientSettingsChoice, isActive && styles.clientSettingsChoiceActive])} onPress={() => setThemePreference(option)}>
                                 <Text style={[styles.clientSettingsChoiceText, isActive && styles.clientSettingsChoiceTextActive]}>{option}</Text>
                               </Pressable>
                             );
@@ -232,10 +286,11 @@ export function ClientAccountPage() {
                       <View style={styles.clientSettingsList}>
                         {currentUserAdoptions.map((adoption) => {
                           const pet = store.pets.find((item) => item.id === adoption.petId);
+                          const petName = pet?.name ?? adoption.petName ?? 'Unknown Pet';
                           return (
                             <View key={adoption.id} style={styles.clientHistoryRow}>
                               <View style={styles.clientHistoryRowBody}>
-                                <Text style={styles.recordTitle}>{pet?.name ?? 'Unknown Pet'}</Text>
+                                <Text style={styles.recordTitle}>{petName}</Text>
                                 <Text style={styles.recordMeta}>Submitted {adoption.createdAt.slice(0, 10)}</Text>
                               </View>
                               <StatusBadge label={adoption.status} tone={adoption.status === 'Approved' ? 'success' : adoption.status === 'Rejected' ? 'danger' : 'neutral'} />
@@ -254,6 +309,20 @@ export function ClientAccountPage() {
                 ) : (
                   <Text style={styles.helper}>Login to manage account settings and adoption history.</Text>
                 )}
+                <Modal visible={isProfileSuccessModalVisible} transparent animationType="fade" onRequestClose={() => setIsProfileSuccessModalVisible(false)}>
+                  <View style={styles.petApplicationSuccessOverlay}>
+                    <View style={styles.petApplicationSuccessModal}>
+                      <View style={styles.petApplicationSuccessIcon}>
+                        <Feather name="check" size={28} color="#ffffff" />
+                      </View>
+                      <Text style={styles.petApplicationSuccessTitle}>Profile saved</Text>
+                      <Text style={styles.petApplicationSuccessText}>Your account details and profile photo were updated successfully.</Text>
+                      <Pressable style={pressableFeedback(styles.petApplicationSuccessButton)} onPress={() => setIsProfileSuccessModalVisible(false)}>
+                        <Text style={styles.petApplicationSuccessButtonText}>Done</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </Modal>
               </View>
             ) : null}
     </>

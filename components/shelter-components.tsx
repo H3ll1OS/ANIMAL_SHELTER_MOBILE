@@ -9,6 +9,10 @@ import type { PaymentMethod, Pet } from '@/types/shelter';
 import { paymentMethodVisuals } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 
+export function pressableFeedback(style: any, disabled?: boolean) {
+  return ({ pressed }: { pressed: boolean }) => [style, pressed && !disabled && styles.pressFeedback];
+}
+
 export function Card({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <View style={styles.card}>
@@ -59,7 +63,7 @@ export function Field({
 
 export function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void | Promise<void>; disabled?: boolean }) {
   return (
-    <Pressable style={[styles.primaryButton, disabled && styles.primaryButtonDisabled]} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)} disabled={disabled}>
+    <Pressable style={pressableFeedback([styles.primaryButton, disabled && styles.primaryButtonDisabled], disabled)} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)} disabled={disabled}>
       <Text style={[styles.primaryButtonText, disabled && styles.primaryButtonTextDisabled]}>{label}</Text>
     </Pressable>
   );
@@ -67,7 +71,7 @@ export function PrimaryButton({ label, onPress, disabled }: { label: string; onP
 
 export function SecondaryButton({ label, onPress }: { label: string; onPress: () => void | Promise<void> }) {
   return (
-    <Pressable style={styles.secondaryButton} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
+    <Pressable style={pressableFeedback(styles.secondaryButton)} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
   );
@@ -115,7 +119,7 @@ export function SettingsRow({
   );
 
   if (onPress) {
-    return <Pressable style={styles.clientSettingsRow} onPress={onPress}>{content}</Pressable>;
+    return <Pressable style={pressableFeedback(styles.clientSettingsRow)} onPress={onPress}>{content}</Pressable>;
   }
 
   return <View style={styles.clientSettingsRow}>{content}</View>;
@@ -137,7 +141,7 @@ export function AdminBottomTab({
   roomy?: boolean;
 }) {
   return (
-    <Pressable style={[styles.adminBottomTab, compact && styles.adminBottomTabCompact, roomy && styles.adminBottomTabRoomy]} onPress={onPress}>
+    <Pressable style={pressableFeedback([styles.adminBottomTab, compact && styles.adminBottomTabCompact, roomy && styles.adminBottomTabRoomy])} onPress={onPress}>
       <View style={[styles.adminBottomTabIconBubble, compact && styles.adminBottomTabIconBubbleCompact, roomy && styles.adminBottomTabIconBubbleRoomy, active && styles.adminBottomTabIconBubbleActive]}>
         <Feather name={icon} size={16} color={active ? '#ffffff' : '#94a3b8'} />
       </View>
@@ -166,7 +170,7 @@ export function AdminSidebarNavItem({
   danger?: boolean;
 }) {
   return (
-    <Pressable style={[styles.adminSidebarItem, active && styles.adminSidebarItemActive, danger && styles.adminSidebarItemDanger]} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
+    <Pressable style={pressableFeedback([styles.adminSidebarItem, active && styles.adminSidebarItemActive, danger && styles.adminSidebarItemDanger])} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
       <View style={[styles.adminSidebarItemIcon, { backgroundColor: tint }]}>
         <Feather name={icon} size={16} color={accent} />
       </View>
@@ -195,7 +199,7 @@ export function AdminMoreMenuItem({
   onPress: () => void | Promise<void>;
 }) {
   return (
-    <Pressable style={styles.adminMoreMenuItem} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
+    <Pressable style={pressableFeedback(styles.adminMoreMenuItem)} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
       <View style={[styles.adminMoreMenuItemIcon, { backgroundColor: tint }]}>
         <Feather name={icon} size={16} color={accent} />
       </View>
@@ -269,7 +273,7 @@ export function ClientTab({
   roomy?: boolean;
 }) {
   return (
-    <Pressable style={[styles.clientTab, compact && styles.clientTabCompact, roomy && styles.clientTabRoomy, active && styles.clientTabActive]} onPress={onPress}>
+    <Pressable style={pressableFeedback([styles.clientTab, compact && styles.clientTabCompact, roomy && styles.clientTabRoomy, active && styles.clientTabActive])} onPress={onPress}>
       <View style={[styles.clientTabIconBubble, compact && styles.clientTabIconBubbleCompact, roomy && styles.clientTabIconBubbleRoomy, active && styles.clientTabIconBubbleActive]}>
         <Feather name={icon} size={16} color={active ? '#ffffff' : '#9b9086'} />
       </View>
@@ -298,13 +302,17 @@ export function ClientPetBrowseCard({
   const isHomeVariant = variant === 'home';
   const isAdoptVariant = variant === 'adopt';
   return (
-    <Pressable style={[styles.clientPetCard, widthStyle, active && styles.clientPetCardActive]} onPress={onPress}>
+    <Pressable style={pressableFeedback([styles.clientPetCard, widthStyle, active && styles.clientPetCardActive])} onPress={onPress}>
       <View style={[styles.clientPetMedia, isHomeVariant && styles.clientPetMediaHome, isAdoptVariant && styles.clientPetMediaAdopt]}>
+        {pet.imageUrl ? (
+          <ExpoImage source={{ uri: pet.imageUrl }} style={styles.clientPetMediaImage} contentFit="cover" />
+        ) : null}
+        {pet.imageUrl ? <View style={styles.clientPetMediaScrim} /> : null}
         <View style={styles.clientPetMediaTop}>
           <View style={styles.clientPetMediaBadge}>
             <Text style={styles.clientPetMediaBadgeText}>{pet.status}</Text>
           </View>
-          <Pressable style={[styles.clientPetFavoriteButton, isFavorite && styles.clientPetFavoriteButtonActive]} onPress={(event) => {
+          <Pressable style={pressableFeedback([styles.clientPetFavoriteButton, isFavorite && styles.clientPetFavoriteButtonActive])} onPress={(event) => {
             event.stopPropagation();
             onToggleFavorite();
           }}>
@@ -312,9 +320,11 @@ export function ClientPetBrowseCard({
           </Pressable>
         </View>
         <View style={styles.clientPetMediaCenter}>
-          <View style={[styles.clientPetMediaIconWrap, isHomeVariant && styles.clientPetMediaIconWrapHome, isAdoptVariant && styles.clientPetMediaIconWrapAdopt]}>
-            <FontAwesome5 name={pet.species === 'Dog' ? 'dog' : pet.species === 'Cat' ? 'cat' : 'paw'} size={isHomeVariant ? 42 : isAdoptVariant ? 48 : 34} color="#ffffff" />
-          </View>
+          {!pet.imageUrl ? (
+            <View style={[styles.clientPetMediaIconWrap, isHomeVariant && styles.clientPetMediaIconWrapHome, isAdoptVariant && styles.clientPetMediaIconWrapAdopt]}>
+              <FontAwesome5 name={pet.species === 'Dog' ? 'dog' : pet.species === 'Cat' ? 'cat' : 'paw'} size={isHomeVariant ? 42 : isAdoptVariant ? 48 : 34} color="#ffffff" />
+            </View>
+          ) : null}
         </View>
       </View>
       <View style={[styles.clientPetCardBody, isHomeVariant && styles.clientPetCardBodyHome, isAdoptVariant && styles.clientPetCardBodyAdopt]}>
@@ -343,10 +353,16 @@ export function AdminPetDirectoryItem({ pet, active, onPress }: { pet: Pet; acti
         : styles.adminPetDirectoryStatusPending;
 
   return (
-    <Pressable style={[styles.adminPetDirectoryItem, active && styles.adminPetDirectoryItemActive]} onPress={onPress}>
+    <Pressable style={pressableFeedback([styles.adminPetDirectoryItem, active && styles.adminPetDirectoryItemActive])} onPress={onPress}>
       <View style={[styles.adminPetDirectoryThumb, { backgroundColor: thumbColor }]}>
-        <View style={styles.adminPetDirectoryThumbGlow} />
-        <FontAwesome5 name={iconName} size={28} color={palette.clayDeep} />
+        {pet.imageUrl ? (
+          <ExpoImage source={{ uri: pet.imageUrl }} style={styles.adminPetDirectoryThumbImage} contentFit="cover" />
+        ) : (
+          <>
+            <View style={styles.adminPetDirectoryThumbGlow} />
+            <FontAwesome5 name={iconName} size={28} color={palette.clayDeep} />
+          </>
+        )}
       </View>
       <View style={styles.adminPetDirectoryItemCopy}>
         <Text style={styles.adminPetDirectoryItemName}>{pet.name}</Text>
@@ -380,7 +396,7 @@ export function DetailRow({ label, value, positive }: { label: string; value: st
 
 export function AuthLink({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <Pressable style={[styles.authLink, active && styles.authLinkActive]} onPress={onPress}>
+    <Pressable style={pressableFeedback([styles.authLink, active && styles.authLinkActive])} onPress={onPress}>
       <Text style={[styles.authLinkText, active && styles.authLinkTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -388,7 +404,7 @@ export function AuthLink({ label, active, onPress }: { label: string; active: bo
 
 export function DangerButton({ label, onPress }: { label: string; onPress: () => void | Promise<void> }) {
   return (
-    <Pressable style={styles.dangerButton} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
+    <Pressable style={pressableFeedback(styles.dangerButton)} onPress={() => void Promise.resolve(onPress()).catch(() => undefined)}>
       <Text style={styles.dangerButtonText}>{label}</Text>
     </Pressable>
   );
@@ -408,7 +424,7 @@ export function RolePill({
   compact?: boolean;
 }) {
   return (
-    <Pressable style={[styles.pill, active && styles.pillActive, disabled && styles.pillDisabled, compact && styles.pillCompact]} onPress={onPress} disabled={disabled}>
+    <Pressable style={pressableFeedback([styles.pill, active && styles.pillActive, disabled && styles.pillDisabled, compact && styles.pillCompact], disabled)} onPress={onPress} disabled={disabled}>
       <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -416,7 +432,7 @@ export function RolePill({
 
 export function Toggle({ label, value, onPress }: { label: string; value: boolean; onPress: () => void }) {
   return (
-    <Pressable style={styles.toggleRow} onPress={onPress}>
+    <Pressable style={pressableFeedback(styles.toggleRow)} onPress={onPress}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <Text style={styles.recordMeta}>{value ? 'On' : 'Off'}</Text>
     </Pressable>

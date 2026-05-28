@@ -2,14 +2,13 @@ import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { palette } from '@/constants/premium-theme';
-import { Field, PaymentMethodLogo, PrimaryButton } from '@/components';
+import { Field, PaymentMethodLogo, PrimaryButton, pressableFeedback } from '@/components';
 import { paymentMethodVisuals } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
 
 export function ClientDonationsPage() {
   const {
-    store,
     activePublicSection,
     activeDonationStep,
     setActiveDonationStep,
@@ -21,6 +20,8 @@ export function ClientDonationsPage() {
     donationTotalValue,
     donationPaymentDetails,
     donationMethodOptions,
+    isSubmittingDonation,
+    submitClientDonation,
   } = useShelterAppContext();
 
   const quickAmounts = ['100', '250', '500', '1000'];
@@ -46,7 +47,7 @@ export function ClientDonationsPage() {
               <View style={styles.clientDonateScreen}>
                 <View style={styles.clientDonateTopBar}>
                   <Pressable
-                    style={[styles.clientDonateBackButton, activeDonationStep === 'account' && styles.clientDonateBackButtonMuted]}
+                    style={pressableFeedback([styles.clientDonateBackButton, activeDonationStep === 'account' && styles.clientDonateBackButtonMuted], activeDonationStep === 'account')}
                     onPress={() => {
                       if (activeDonationStep === 'send') {
                         setActiveDonationStep('account');
@@ -61,14 +62,14 @@ export function ClientDonationsPage() {
                 </View>
 
                 <View style={styles.clientDonateTabRow}>
-                  <Pressable style={[styles.clientDonateTab, activeDonationStep === 'account' && styles.clientDonateTabActive]} onPress={() => setActiveDonationStep('account')}>
+                  <Pressable style={pressableFeedback([styles.clientDonateTab, activeDonationStep === 'account' && styles.clientDonateTabActive])} onPress={() => setActiveDonationStep('account')}>
                     <View style={[styles.clientDonateStepDot, activeDonationStep === 'account' && styles.clientDonateStepDotActive]}>
                       <Text style={[styles.clientDonateStepDotText, activeDonationStep === 'account' && styles.clientDonateStepDotTextActive]}>1</Text>
                     </View>
                     <Text style={[styles.clientDonateTabText, activeDonationStep === 'account' && styles.clientDonateTabTextActive]}>Account</Text>
                   </Pressable>
                   <Pressable
-                    style={[styles.clientDonateTab, activeDonationStep === 'send' && styles.clientDonateTabActive, !hasAccountDetails && styles.clientDonateTabDisabled]}
+                    style={pressableFeedback([styles.clientDonateTab, activeDonationStep === 'send' && styles.clientDonateTabActive, !hasAccountDetails && styles.clientDonateTabDisabled], !hasAccountDetails)}
                     onPress={() => setActiveDonationStep('send')}
                     disabled={!hasAccountDetails}
                   >
@@ -96,7 +97,7 @@ export function ClientDonationsPage() {
                           <Text style={styles.clientDonateAccountName}>{donorDisplayName}</Text>
                           <Text style={styles.clientDonateAccountMeta}>{donationForm.email || 'Add your email for receipt records'}</Text>
                         </View>
-                        <Pressable style={[styles.clientDonateAnonymousChip, donationForm.anonymous && styles.clientDonateAnonymousChipActive]} onPress={() => setDonationForm((current) => ({ ...current, anonymous: !current.anonymous }))}>
+                        <Pressable style={pressableFeedback([styles.clientDonateAnonymousChip, donationForm.anonymous && styles.clientDonateAnonymousChipActive])} onPress={() => setDonationForm((current) => ({ ...current, anonymous: !current.anonymous }))}>
                           <Text style={[styles.clientDonateAnonymousChipText, donationForm.anonymous && styles.clientDonateAnonymousChipTextActive]}>{donationForm.anonymous ? 'Anonymous' : 'Named'}</Text>
                         </Pressable>
                       </View>
@@ -160,7 +161,7 @@ export function ClientDonationsPage() {
                         <View>
                           <Text style={styles.clientDonateCardTitle}>Giving as</Text>
                         </View>
-                        <Pressable style={styles.clientDonateEditButton} onPress={() => setActiveDonationStep('account')}>
+                        <Pressable style={pressableFeedback(styles.clientDonateEditButton)} onPress={() => setActiveDonationStep('account')}>
                           <Feather name="edit-2" size={14} color={palette.clayDeep} />
                           <Text style={styles.clientDonateEditButtonText}>Edit</Text>
                         </Pressable>
@@ -173,7 +174,7 @@ export function ClientDonationsPage() {
                           <Text style={styles.clientDonateAccountName}>{donorDisplayName}</Text>
                           <Text style={styles.clientDonateAccountMeta}>{donationForm.email || 'Email required for receipt records'}</Text>
                         </View>
-                        <Pressable style={[styles.clientDonateAnonymousChip, donationForm.anonymous && styles.clientDonateAnonymousChipActive]} onPress={() => setDonationForm((current) => ({ ...current, anonymous: !current.anonymous }))}>
+                        <Pressable style={pressableFeedback([styles.clientDonateAnonymousChip, donationForm.anonymous && styles.clientDonateAnonymousChipActive])} onPress={() => setDonationForm((current) => ({ ...current, anonymous: !current.anonymous }))}>
                           <Text style={[styles.clientDonateAnonymousChipText, donationForm.anonymous && styles.clientDonateAnonymousChipTextActive]}>{donationForm.anonymous ? 'Anonymous' : 'Named'}</Text>
                         </Pressable>
                       </View>
@@ -210,7 +211,7 @@ export function ClientDonationsPage() {
                         {quickAmounts.map((amount) => {
                           const isActive = donationForm.amount === amount;
                           return (
-                            <Pressable key={amount} style={[styles.clientDonateQuickAmount, isActive && styles.clientDonateQuickAmountActive]} onPress={() => setDonationForm((current) => ({ ...current, amount }))}>
+                            <Pressable key={amount} style={pressableFeedback([styles.clientDonateQuickAmount, isActive && styles.clientDonateQuickAmountActive])} onPress={() => setDonationForm((current) => ({ ...current, amount }))}>
                               <Text style={[styles.clientDonateQuickAmountText, isActive && styles.clientDonateQuickAmountTextActive]}>PHP {amount}</Text>
                             </Pressable>
                           );
@@ -245,10 +246,10 @@ export function ClientDonationsPage() {
                           return (
                             <Pressable
                               key={option.method}
-                              style={[
+                              style={pressableFeedback([
                                 styles.clientDonatePaymentOption,
                                 isActive && [styles.clientDonatePaymentOptionActive, { backgroundColor: visual.soft, borderColor: visual.border }],
-                              ]}
+                              ])}
                               onPress={() => setDonationForm((current) => ({ ...current, paymentMethod: option.method }))}
                             >
                               <View style={[styles.clientDonatePaymentRadio, isActive && styles.clientDonatePaymentRadioActive]}>
@@ -326,7 +327,7 @@ export function ClientDonationsPage() {
                     </View>
 
                     <View style={styles.clientDonateActionRow}>
-                      <PrimaryButton label="Confirm Donation" disabled={!canConfirmDonation} onPress={() => store.submitDonation({ name: donationForm.name, lastName: donationForm.lastName, email: donationForm.email, state: donationForm.state, country: donationForm.country, zipCode: donationForm.zipCode, amount: donationAmountValue, anonymous: donationForm.anonymous, paymentMethod: donationForm.paymentMethod, paymentDetailSummary: `Method: ${donationPaymentDetails.label} | ${donationForm.detailA} | ${donationForm.detailB}` })} />
+                      <PrimaryButton label={isSubmittingDonation ? 'Submitting Donation...' : 'Confirm Donation'} disabled={!canConfirmDonation || isSubmittingDonation} onPress={submitClientDonation} />
                     </View>
                   </>
                 )}

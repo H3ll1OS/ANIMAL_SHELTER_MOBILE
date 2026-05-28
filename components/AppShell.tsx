@@ -9,7 +9,7 @@ import { palette } from '@/constants/premium-theme';
 import { AdminWorkspace } from '@/components/AdminWorkspace';
 import { ClientWorkspace } from '@/components/ClientWorkspace';
 import { DeveloperWorkspace } from '@/components/DeveloperWorkspace';
-import { AdminBottomTab, AdminMoreMenuItem, AdminSidebarNavItem, AuthLink, Card, ClientTab, Field, PrimaryButton, RolePill, SecondaryButton } from '@/components';
+import { AdminBottomTab, AdminMoreMenuItem, AdminSidebarNavItem, AuthLink, Card, ClientTab, Field, PrimaryButton, RolePill, SecondaryButton, pressableFeedback } from '@/components';
 import { demoAccounts, formatAdminCurrency, formatAdminDate, getAdminDonationStatus, getAdminHealthStatusPriority, getDateTimestamp, getDonationTransactionId, getInitials, isPendingAdoptionStatus, makeEuthanasiaForm, makeHealthForm, makePetForm, makeVaccineForm, paymentMethodVisuals, splitFullName } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 import { ShelterAppProvider } from '@/hooks/useShelterAppContext';
@@ -54,6 +54,7 @@ export function ShelterMobileApp({
   const [petApplicationError, setPetApplicationError] = useState<string | null>(null);
   const [petApplicationFieldErrors, setPetApplicationFieldErrors] = useState<Partial<Record<PetApplicationFieldKey, string>>>({});
   const [isSubmittingPetApplication, setIsSubmittingPetApplication] = useState(false);
+  const [isPetApplicationSuccessModalVisible, setIsPetApplicationSuccessModalVisible] = useState(false);
   const [petApplicationForm, setPetApplicationForm] = useState({
     fullName: '',
     email: '',
@@ -73,6 +74,8 @@ export function ShelterMobileApp({
   const [selectedHealthPetId, setSelectedHealthPetId] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('u-admin');
   const [activeDonationStep, setActiveDonationStep] = useState<DonationStep>('send');
+  const [isSubmittingDonation, setIsSubmittingDonation] = useState(false);
+  const [isDonationSuccessModalVisible, setIsDonationSuccessModalVisible] = useState(false);
   const [donationForm, setDonationForm] = useState({
     name: 'Lea',
     lastName: 'Navarro',
@@ -91,7 +94,7 @@ export function ShelterMobileApp({
   const [faceIdEnabled, setFaceIdEnabled] = useState(true);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
   const [showPasswordEditor, setShowPasswordEditor] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '', address: '', dateOfBirth: '' });
+  const [profileForm, setProfileForm] = useState<{ name: string; email: string; phone: string; address: string; dateOfBirth: string; profileImage?: { uri: string; name?: string | null; mimeType?: string | null } | null }>({ name: '', email: '', phone: '', address: '', dateOfBirth: '', profileImage: null });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', nextPassword: '' });
   const [petForm, setPetForm] = useState(makePetForm());
   const [petEditId, setPetEditId] = useState<string | null>(null);
@@ -105,10 +108,20 @@ export function ShelterMobileApp({
   const [redirectPrompt, setRedirectPrompt] = useState<RedirectPrompt>(null);
   const adminSidebarTranslateX = useRef(new Animated.Value(36)).current;
   const adminSidebarOpacity = useRef(new Animated.Value(0)).current;
+  const noticeOpacity = useRef(new Animated.Value(0)).current;
+  const noticeAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const dismissNoticeRef = useRef(store.dismissNotice);
 
   const currentUser = store.currentUser;
+  const storeNotice = store.notice;
+  const visibleStoreNotice = isPetApplicationSuccessModalVisible || isDonationSuccessModalVisible ? null : storeNotice;
   const currentUserId = currentUser?.id ?? null;
   const currentUserRole = currentUser?.role ?? null;
+  const currentUserName = currentUser?.name ?? '';
+  const currentUserEmail = currentUser?.email ?? '';
+  const currentUserPhone = currentUser?.phone ?? '';
+  const currentUserAddress = currentUser?.address ?? '';
+  const currentUserDateOfBirth = currentUser?.dateOfBirth ?? '';
   const isAuthenticated = Boolean(currentUser);
   const isCompactPhone = viewportWidth < 390;
   const isShortScreen = viewportHeight < 860;
@@ -150,31 +163,68 @@ export function ShelterMobileApp({
   const adminBottomNavDockPadding = isTablet ? 10 : 8;
   const clientBottomNavHeight = useCompactBottomNav ? 64 : useRoomyBottomNav ? 92 : 88;
   const adminBottomNavHeight = useCompactBottomNav ? 64 : useRoomyBottomNav ? 96 : 92;
-  const bottomContentPadding = hasClientBottomNav ? clientBottomNavDockPadding + clientBottomNavHeight : hasAdminBottomNav ? adminBottomNavDockPadding + adminBottomNavHeight : 18;
+  const bottomNavClearance = isTablet ? 24 : 34;
+  const bottomContentPadding = hasClientBottomNav
+    ? clientBottomNavDockPadding + clientBottomNavHeight + bottomNavClearance
+    : hasAdminBottomNav
+      ? adminBottomNavDockPadding + adminBottomNavHeight + bottomNavClearance
+      : 18;
 
   useEffect(() => {
-    const { firstName, lastName } = splitFullName(currentUser?.name);
+    dismissNoticeRef.current = store.dismissNotice;
+  }, [store.dismissNotice]);
+
+  useEffect(() => {
+    if (!storeNotice) return;
+
+    noticeAnimationRef.current?.stop();
+    noticeOpacity.setValue(1);
+
+    const hideTimer = setTimeout(() => {
+      const animation = Animated.timing(noticeOpacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      });
+
+      noticeAnimationRef.current = animation;
+      animation.start(({ finished }) => {
+        if (finished) {
+          dismissNoticeRef.current();
+        }
+      });
+    }, 2600);
+
+    return () => {
+      clearTimeout(hideTimer);
+      noticeAnimationRef.current?.stop();
+    };
+  }, [storeNotice, noticeOpacity]);
+
+  useEffect(() => {
+    const { firstName, lastName } = splitFullName(currentUserName);
     setPetApplicationForm((current) => ({
       ...current,
-      fullName: currentUser?.name ?? '',
-      email: currentUser?.email ?? '',
-      phone: currentUser?.phone ?? '',
-      address: currentUser?.address ?? '',
+      fullName: currentUserName,
+      email: currentUserEmail,
+      phone: currentUserPhone,
+      address: currentUserAddress,
     }));
     setProfileForm({
-      name: currentUser?.name ?? '',
-      email: currentUser?.email ?? '',
-      phone: currentUser?.phone ?? '',
-      address: currentUser?.address ?? '',
-      dateOfBirth: currentUser?.dateOfBirth ?? '',
+      name: currentUserName,
+      email: currentUserEmail,
+      phone: currentUserPhone,
+      address: currentUserAddress,
+      dateOfBirth: currentUserDateOfBirth,
+      profileImage: null,
     });
     setDonationForm((current) => ({
       ...current,
-      name: currentUser ? firstName : '',
+      name: currentUserId ? firstName : '',
       lastName: lastName,
-      email: currentUser?.email ?? '',
+      email: currentUserEmail,
     }));
-  }, [currentUser]);
+  }, [currentUserId, currentUserName, currentUserEmail, currentUserPhone, currentUserAddress, currentUserDateOfBirth]);
 
   useEffect(() => {
     if (activeRoleView === 'admin' && !canSeeAdmin) setActiveRoleView('public');
@@ -213,10 +263,11 @@ export function ShelterMobileApp({
     setEuthanasiaForm((current) => (store.pets.some((pet) => pet.id === current.petId) ? current : makeEuthanasiaForm(undefined, defaultPetId)));
   }, [defaultPetId, store.pets]);
 
-  const filteredPets = useMemo(
-    () => store.pets.filter((pet) => (speciesFilter === 'all' ? true : pet.species === speciesFilter) && (activeRoleView !== 'public' || pet.status === 'Available')),
-    [activeRoleView, speciesFilter, store.pets]
-  );
+  const clientAvailablePets = useMemo(() => store.pets.filter((pet) => pet.status === 'Available'), [store.pets]);
+  const filteredPets = useMemo(() => {
+    const visiblePets = activeRoleView === 'public' ? clientAvailablePets : store.pets;
+    return visiblePets.filter((pet) => speciesFilter === 'all' || pet.species === speciesFilter);
+  }, [activeRoleView, clientAvailablePets, speciesFilter, store.pets]);
   const adoptFilteredPets = filteredPets;
   const adoptSpotlightPet = adoptFilteredPets.find((pet) => pet.id === selectedPetId) ?? adoptFilteredPets[0] ?? null;
   const adminPetSearchQuery = adminPetSearchTerm.trim().toLowerCase();
@@ -444,7 +495,9 @@ export function ShelterMobileApp({
     ]).start();
   }, [adminSidebarOpacity, adminSidebarTranslateX, isAdminSidebarOpen]);
 
-  const selectedPet = store.pets.find((pet) => pet.id === selectedPetId) ?? store.pets[0];
+  const selectedPet = activeRoleView === 'public'
+    ? clientAvailablePets.find((pet) => pet.id === selectedPetId) ?? null
+    : store.pets.find((pet) => pet.id === selectedPetId) ?? store.pets[0] ?? null;
   const selectedAdoption = adminFilteredAdoptions.find((item) => item.id === selectedAdoptionId) ?? adminFilteredAdoptions[0] ?? null;
   const selectedDonation = store.donations.find((item) => item.id === selectedDonationId) ?? store.donations[0] ?? null;
   const selectedManagedUser = store.users.find((user) => user.id === selectedUserId) ?? store.users[0];
@@ -731,11 +784,15 @@ export function ShelterMobileApp({
     setActiveAdminSection('health-record');
   };
   const openPetDetails = (petId: string, source: Exclude<PublicSection, 'pet-details'>) => {
+    if (!clientAvailablePets.some((pet) => pet.id === petId)) return;
+
     setSelectedPetId(petId);
     setPetDetailsReturnSection(source);
     setActivePublicSection('pet-details');
   };
   const openPetApplication = (petId: string) => {
+    if (!clientAvailablePets.some((pet) => pet.id === petId)) return;
+
     setSelectedPetId(petId);
     setPetApplicationError(null);
     setPetApplicationFieldErrors({});
@@ -837,11 +894,37 @@ export function ShelterMobileApp({
         documents: '',
       }));
       setPetApplicationUploads([]);
-      setActivePublicSection('account');
+      store.dismissNotice();
+      setIsPetApplicationSuccessModalVisible(true);
     } catch {
       setPetApplicationError('The application could not be submitted. Review the notice above and try again.');
     } finally {
       setIsSubmittingPetApplication(false);
+    }
+  };
+  const submitClientDonation = async () => {
+    if (isSubmittingDonation) return;
+
+    setIsSubmittingDonation(true);
+
+    try {
+      await store.submitDonation({
+        name: donationForm.name,
+        lastName: donationForm.lastName,
+        email: donationForm.email,
+        state: donationForm.state,
+        country: donationForm.country,
+        zipCode: donationForm.zipCode,
+        amount: donationAmountValue,
+        anonymous: donationForm.anonymous,
+        paymentMethod: donationForm.paymentMethod,
+        paymentDetailSummary: `Method: ${donationPaymentDetails.label} | ${donationForm.detailA} | ${donationForm.detailB}`,
+      });
+
+      store.dismissNotice();
+      setIsDonationSuccessModalVisible(true);
+    } finally {
+      setIsSubmittingDonation(false);
     }
   };
   const chooseDestination = (destination: RoleView) => {
@@ -900,6 +983,8 @@ export function ShelterMobileApp({
     setPetApplicationFieldErrors,
     isSubmittingPetApplication,
     setIsSubmittingPetApplication,
+    isSubmittingDonation,
+    setIsSubmittingDonation,
     petApplicationForm,
     setPetApplicationForm,
     selectedAdoptionId,
@@ -1077,6 +1162,7 @@ export function ShelterMobileApp({
     pickSupportingDocuments,
     removeSupportingDocument,
     submitPetApplication,
+    submitClientDonation,
     chooseDestination,
     adminSidebarTranslateX,
     adminSidebarOpacity,
@@ -1107,7 +1193,7 @@ export function ShelterMobileApp({
           {authMode === 'login' ? (
             <View style={styles.demoAccountRow}>
               {demoAccounts.map((account) => (
-                <Pressable key={account.label} style={styles.demoAccountChip} onPress={() => setLoginForm({ email: account.email, password: account.password })}>
+                <Pressable key={account.label} style={pressableFeedback(styles.demoAccountChip)} onPress={() => setLoginForm({ email: account.email, password: account.password })}>
                   <Text style={styles.demoAccountChipText}>{account.label}</Text>
                 </Pressable>
               ))}
@@ -1193,16 +1279,16 @@ export function ShelterMobileApp({
           : 'This account can open the client or admin workspace. Choose the destination for this session.'}
       </Text>
       <View style={styles.redirectOptionList}>
-        <Pressable style={styles.redirectOption} onPress={() => chooseDestination('public')}>
+        <Pressable style={pressableFeedback(styles.redirectOption)} onPress={() => chooseDestination('public')}>
           <Text style={styles.redirectOptionTitle}>Client Page</Text>
           <Text style={styles.redirectOptionText}>Open the client-facing workspace and land on the home section.</Text>
         </Pressable>
-        <Pressable style={styles.redirectOption} onPress={() => chooseDestination('admin')}>
+        <Pressable style={pressableFeedback(styles.redirectOption)} onPress={() => chooseDestination('admin')}>
           <Text style={styles.redirectOptionTitle}>Admin Page</Text>
           <Text style={styles.redirectOptionText}>Open the shelter operations workspace for pets, adoptions, donations, and health.</Text>
         </Pressable>
         {redirectPrompt.role === 'developer' ? (
-          <Pressable style={styles.redirectOption} onPress={() => chooseDestination('developer')}>
+          <Pressable style={pressableFeedback(styles.redirectOption)} onPress={() => chooseDestination('developer')}>
             <Text style={styles.redirectOptionTitle}>Developer Page</Text>
             <Text style={styles.redirectOptionText}>Open the developer workspace for user-role and account management.</Text>
           </Pressable>
@@ -1222,7 +1308,7 @@ export function ShelterMobileApp({
             keyboardShouldPersistTaps="handled">
             <View style={[styles.authStack, { maxWidth: authMaxWidth }]}>
               {store.notice ? (
-                <Pressable style={styles.authNotice} onPress={store.dismissNotice}>
+                <Pressable style={pressableFeedback(styles.authNotice)} onPress={store.dismissNotice}>
                   <Feather name="bell" size={16} color={palette.clayDeep} />
                   <Text style={styles.noticeText}>{store.notice}</Text>
                 </Pressable>
@@ -1246,7 +1332,7 @@ export function ShelterMobileApp({
             keyboardShouldPersistTaps="handled">
             <View style={[styles.authStack, { maxWidth: 620 }]}>
               {store.notice ? (
-                <Pressable style={styles.authNotice} onPress={store.dismissNotice}>
+                <Pressable style={pressableFeedback(styles.authNotice)} onPress={store.dismissNotice}>
                   <Feather name="bell" size={16} color={palette.clayDeep} />
                   <Text style={styles.noticeText}>{store.notice}</Text>
                 </Pressable>
@@ -1267,6 +1353,7 @@ export function ShelterMobileApp({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding, paddingBottom: bottomContentPadding }]}
+          scrollIndicatorInsets={{ bottom: bottomContentPadding }}
           keyboardShouldPersistTaps="handled">
           <View style={[styles.appShell, { maxWidth: contentMaxWidth }]}>
             {activeRoleView !== 'public' && activeRoleView !== 'admin' ? (
@@ -1282,11 +1369,21 @@ export function ShelterMobileApp({
               </View>
             ) : null}
 
-        {store.notice ? (
-          <Pressable style={styles.notice} onPress={store.dismissNotice}>
-            <Feather name="bell" size={16} color={palette.clayDeep} />
-            <Text style={styles.noticeText}>{store.notice}</Text>
-          </Pressable>
+        {visibleStoreNotice ? (
+          <Animated.View style={{
+            opacity: noticeOpacity,
+            transform: [{
+              translateY: noticeOpacity.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-8, 0],
+              }),
+            }],
+          }}>
+            <Pressable style={pressableFeedback(styles.notice)} onPress={store.dismissNotice}>
+              <Feather name="bell" size={16} color={palette.clayDeep} />
+              <Text style={styles.noticeText}>{visibleStoreNotice}</Text>
+            </Pressable>
+          </Animated.View>
         ) : null}
 
         {activeRoleView !== 'public' && activeRoleView !== 'admin' ? sessionCard : null}
@@ -1298,6 +1395,34 @@ export function ShelterMobileApp({
         {activeRoleView === 'developer' && canSeeDeveloper ? <DeveloperWorkspace /> : null}
           </View>
         </ScrollView>
+        {isPetApplicationSuccessModalVisible ? (
+          <View style={styles.petApplicationSuccessOverlay}>
+            <View style={styles.petApplicationSuccessModal}>
+              <View style={styles.petApplicationSuccessIcon}>
+                <Feather name="check" size={28} color="#ffffff" />
+              </View>
+              <Text style={styles.petApplicationSuccessTitle}>Application submitted</Text>
+              <Text style={styles.petApplicationSuccessText}>Your adoption application was sent successfully. The shelter team will review it and update your account history.</Text>
+              <Pressable style={pressableFeedback(styles.petApplicationSuccessButton)} onPress={() => setIsPetApplicationSuccessModalVisible(false)}>
+                <Text style={styles.petApplicationSuccessButtonText}>Done</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+        {isDonationSuccessModalVisible ? (
+          <View style={styles.petApplicationSuccessOverlay}>
+            <View style={styles.petApplicationSuccessModal}>
+              <View style={styles.petApplicationSuccessIcon}>
+                <Feather name="gift" size={28} color="#ffffff" />
+              </View>
+              <Text style={styles.petApplicationSuccessTitle}>Donation submitted</Text>
+              <Text style={styles.petApplicationSuccessText}>Your donation was recorded successfully. Thank you for supporting the shelter rescue fund.</Text>
+              <Pressable style={pressableFeedback(styles.petApplicationSuccessButton)} onPress={() => setIsDonationSuccessModalVisible(false)}>
+                <Text style={styles.petApplicationSuccessButtonText}>Done</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
         {activeRoleView === 'admin' && canSeeAdmin && isAdminSidebarOpen ? (
           <View style={styles.adminSidebarOverlay} pointerEvents="box-none">
             <Pressable style={styles.adminSidebarBackdrop} onPress={() => closeAdminSidebar()} />
@@ -1312,7 +1437,7 @@ export function ShelterMobileApp({
                     <View style={styles.adminSidebarBadge}>
                       <Text style={styles.adminSidebarBadgeText}>{accountInitials}</Text>
                     </View>
-                    <Pressable style={styles.adminSidebarCloseButton} onPress={() => closeAdminSidebar()}>
+                    <Pressable style={pressableFeedback(styles.adminSidebarCloseButton)} onPress={() => closeAdminSidebar()}>
                       <Feather name="x" size={16} color={palette.ink} />
                     </Pressable>
                   </View>

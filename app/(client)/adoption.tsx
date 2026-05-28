@@ -1,8 +1,9 @@
 import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { palette } from '@/constants/premium-theme';
-import { Card, Field, PrimaryButton } from '@/components';
+import { Card, Field, PrimaryButton, pressableFeedback } from '@/components';
 import { getPetVaccinationStatus } from '@/utils/shelter-utils';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
@@ -36,7 +37,7 @@ export function ClientPetApplicationPage() {
                 <View style={styles.petApplicationScreen}>
                   <View style={styles.petApplicationHero}>
                     <View style={styles.petApplicationHeroTop}>
-                      <Pressable style={styles.petApplicationBackButton} onPress={() => setActivePublicSection('pet-details')}>
+                      <Pressable style={pressableFeedback(styles.petApplicationBackButton)} onPress={() => setActivePublicSection('pet-details')}>
                         <Feather name="arrow-left" size={18} color={palette.ink} />
                       </Pressable>
                       <View style={styles.petApplicationHeroBadge}>
@@ -46,10 +47,16 @@ export function ClientPetApplicationPage() {
 
                     <View style={styles.petApplicationHeroBody}>
                       <View style={styles.petApplicationHeroMedia}>
-                        <View style={styles.petApplicationHeroGlow} />
-                        <View style={styles.petApplicationHeroIconWrap}>
-                          <FontAwesome5 name={selectedPet.species === 'Dog' ? 'dog' : selectedPet.species === 'Cat' ? 'cat' : 'paw'} size={48} color="#ffffff" />
-                        </View>
+                        {selectedPet.imageUrl ? (
+                          <ExpoImage source={{ uri: selectedPet.imageUrl }} style={styles.petApplicationHeroImage} contentFit="cover" />
+                        ) : (
+                          <>
+                            <View style={styles.petApplicationHeroGlow} />
+                            <View style={styles.petApplicationHeroIconWrap}>
+                              <FontAwesome5 name={selectedPet.species === 'Dog' ? 'dog' : selectedPet.species === 'Cat' ? 'cat' : 'paw'} size={48} color="#ffffff" />
+                            </View>
+                          </>
+                        )}
                       </View>
                       <View style={styles.petApplicationHeroCopy}>
                         <Text style={styles.petApplicationKicker}>Adopt {selectedPet.name}</Text>
@@ -139,7 +146,7 @@ export function ClientPetApplicationPage() {
                                   <Text style={styles.petApplicationUploadText}>Add IDs, proof of address, or other review documents.</Text>
                                 </View>
                               </View>
-                              <Pressable style={styles.petApplicationUploadButton} onPress={() => void pickSupportingDocuments()}>
+                              <Pressable style={pressableFeedback(styles.petApplicationUploadButton)} onPress={() => void pickSupportingDocuments()}>
                                 <Text style={styles.petApplicationUploadButtonText}>{petApplicationUploads.length > 0 ? 'Add More Files' : 'Choose Files'}</Text>
                               </Pressable>
 
@@ -151,7 +158,7 @@ export function ClientPetApplicationPage() {
                                         <Text numberOfLines={1} style={styles.petApplicationUploadItemName}>{upload.name}</Text>
                                         <Text style={styles.petApplicationUploadItemMeta}>{upload.mimeType ?? 'Document'}{typeof upload.size === 'number' ? ` / ${Math.max(1, Math.round(upload.size / 1024))} KB` : ''}</Text>
                                       </View>
-                                      <Pressable style={styles.petApplicationUploadRemove} onPress={() => removeSupportingDocument(upload.uri)}>
+                                      <Pressable style={pressableFeedback(styles.petApplicationUploadRemove)} onPress={() => removeSupportingDocument(upload.uri)}>
                                         <Feather name="x" size={14} color={palette.clayDeep} />
                                       </Pressable>
                                     </View>

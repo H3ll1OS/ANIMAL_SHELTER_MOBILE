@@ -2,7 +2,7 @@ import { ShelterMobileApp } from '@/components/AppShell';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { SpeciesFilter } from '@/types/navigation';
-import { ClientPetBrowseCard } from '@/components';
+import { ClientPetBrowseCard, pressableFeedback } from '@/components';
 import { styles } from '@/constants/styles';
 import { useShelterAppContext } from '@/hooks/useShelterAppContext';
 
@@ -42,10 +42,10 @@ export function ClientHomePage() {
                       </Text>
                     </View>
                     <View style={styles.clientHomeHeroActions}>
-                      <Pressable style={styles.clientHomeHeroIconButton} onPress={() => setActivePublicSection('donations')}>
+                      <Pressable style={pressableFeedback(styles.clientHomeHeroIconButton)} onPress={() => setActivePublicSection('donations')}>
                         <Feather name="gift" size={16} color="#ffffff" />
                       </Pressable>
-                      <Pressable style={styles.clientHomeHeroIconButton} onPress={() => setActivePublicSection('account')}>
+                      <Pressable style={pressableFeedback(styles.clientHomeHeroIconButton)} onPress={() => setActivePublicSection('account')}>
                         <Feather name="bell" size={16} color="#ffffff" />
                       </Pressable>
                     </View>
@@ -70,12 +70,12 @@ export function ClientHomePage() {
                   {(['all', 'Dog', 'Cat'] as SpeciesFilter[]).map((filter) => (
                     <Pressable
                       key={filter}
-                      style={[styles.clientHomeFilterChip, speciesFilter === filter && styles.clientHomeFilterChipActive]}
+                      style={pressableFeedback([styles.clientHomeFilterChip, speciesFilter === filter && styles.clientHomeFilterChipActive])}
                       onPress={() => setSpeciesFilter(filter)}>
                       <Text style={[styles.clientHomeFilterChipText, speciesFilter === filter && styles.clientHomeFilterChipTextActive]}>{filter}</Text>
                     </Pressable>
                   ))}
-                  <Pressable style={styles.clientHomeGhostButton} onPress={() => setActivePublicSection('pets')}>
+                  <Pressable style={pressableFeedback(styles.clientHomeGhostButton)} onPress={() => setActivePublicSection('pets')}>
                     <Text style={styles.clientHomeGhostButtonText}>See All</Text>
                   </Pressable>
                 </View>
@@ -86,7 +86,7 @@ export function ClientHomePage() {
                       <Text style={styles.clientSectionLabel}>Top matches</Text>
                       <Text style={styles.clientHomeSectionText}>A premium shortlist of pets ready to meet you.</Text>
                     </View>
-                    <Pressable style={styles.clientHomeInlineAction} onPress={() => setActivePublicSection('pets')}>
+                    <Pressable style={pressableFeedback(styles.clientHomeInlineAction)} onPress={() => setActivePublicSection('pets')}>
                       <Text style={styles.clientHomeInlineActionText}>Browse all pets</Text>
                     </Pressable>
                   </View>

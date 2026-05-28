@@ -27,6 +27,7 @@ export type Pet = {
   gender: 'Male' | 'Female' | 'Unknown';
   description: string;
   imageLabel: string;
+  imageUrl?: string;
   status: PetStatus;
   dateReceived: string;
   size: 'Small' | 'Medium' | 'Large';
@@ -35,6 +36,7 @@ export type Pet = {
 export type Adoption = {
   id: string;
   petId: string;
+  petName?: string;
   userId: string;
   fullName: string;
   email: string;

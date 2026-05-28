@@ -30,7 +30,7 @@ type DonationForm = {
   detailA: string;
   detailB: string;
 };
-type ProfileForm = { name: string; email: string; phone: string; address: string; dateOfBirth: string };
+type ProfileForm = { name: string; email: string; phone: string; address: string; dateOfBirth: string; profileImage?: { uri: string; name?: string | null; mimeType?: string | null } | null };
 type PasswordForm = { currentPassword: string; nextPassword: string };
 type CountTab = { key: string; label: string; count: number };
 type ActionItem = AnyRecord;
@@ -59,7 +59,7 @@ export type ShelterAppContextValue = {
   setFavoritePetIds: AnySetter;
   currentUser: ShelterUser | null;
   currentUserAdoptions: Adoption[];
-  selectedPet: Pet;
+  selectedPet: Pet | null;
   selectedManagedUser: ShelterUser;
   selectedDonation: Donation;
   selectedAdoption: Adoption | null;
@@ -89,6 +89,7 @@ export type ShelterAppContextValue = {
   petApplicationUploads: AnyRecord[];
   petApplicationForm: AnyRecord;
   petApplicationFieldErrors: AnyRecord;
+  isSubmittingDonation: boolean;
   donationForm: DonationForm;
   donationMethodOptions: { method: PaymentMethod }[];
   activeDonationMethodVisual: PaymentMethodVisual;
@@ -111,6 +112,7 @@ export type ShelterAppContextValue = {
   adminQuickActionWidthStyle: ViewStyle;
   setPetApplicationForm: AnySetter;
   setPetApplicationError: AnySetter;
+  submitClientDonation: () => Promise<void>;
   setDonationForm: AnySetter;
   setIsPaymentMethodMenuOpen: AnySetter;
   setProfileForm: AnySetter;
